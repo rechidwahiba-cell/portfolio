@@ -628,3 +628,14 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); }
 @media (max-width: 960px) {
   .shiftband, .quotes.quotes--row { grid-template-columns: 1fr; }
 }
+
+/* Tools I built */
+.tgrid { grid-template-columns: repeat(4, 1fr); }
+.tgrid .wcard p { flex: 1; }
+.tlinks { display: flex; align-items: center; gap: 16px; padding-top: 4px; font-size: .8rem; font-weight: 700; }
+.tlinks a { color: var(--navy); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(201, 164, 92, .8); }
+.tlinks a:hover { color: #9A7A35; }
+.tlinks .tlink { padding: 8px 16px; border-radius: 999px; background: var(--gold); color: var(--navy-deep); text-decoration: none; }
+.tlinks .tlink:hover { background: var(--gold-soft); color: var(--navy-deep); }
+@media (max-width: 1100px) { .tgrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .tgrid { grid-template-columns: 1fr; } }
