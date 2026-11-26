@@ -6,10 +6,15 @@ const onScroll = () => nav.classList.toggle('is-stuck', window.scrollY > 40);
 onScroll();
 window.addEventListener('scroll', onScroll, { passive: true });
 
+// Language: English by default, French on request (?lang=fr, or the EN / FR switch)
+let LANG = 'en';
+const nf = (n) => Math.round(n).toLocaleString(LANG === 'fr' ? 'fr-FR' : 'en-US');
+
 // Number formatting for the animated counters
 function format(el, value) {
   const decimals = Number(el.dataset.decimals || 0);
-  let text = decimals ? value.toFixed(decimals) : Math.round(value).toLocaleString('en-US');
+  let text = decimals ? value.toFixed(decimals) : nf(value);
+  if (decimals && LANG === 'fr') text = text.replace('.', ',');
   if (el.dataset.format === 'plus') text += '+';
   return (el.dataset.prefix || '') + text + (el.dataset.suffix || '');
 }
@@ -36,7 +41,8 @@ const SERIES = {
   linkedin: [6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,8523,8740,8882,9001,9084,9141,9236,9309,9408,9472,9549,9606,9677,9781,9903,9964,10511,10622,10671,10733,10820,10873,10920,11027,11095,11147,11286,11409,11184,11574,11702,12449,12449,12449,12525,12635,12635,12635,12751,12905,12911,13009],
 };
 
-(function drawGrowth() {
+function drawGrowth() {
+  const monthNov = LANG === 'fr' ? 'nov. 2026' : 'Nov 2026', monthOct = LANG === 'fr' ? 'oct. 2025' : 'Oct 2025';
   const host = document.getElementById('growthChart');
   if (!host) return;
   const W = 640, H = 300, L = 44, R = 96, T = 34, B = 30, max = 14000;
@@ -55,15 +61,16 @@ const SERIES = {
     + '<path class="line" d="' + d + '"/>'
     + '<circle class="dot" cx="' + fx + '" cy="' + fy + '" r="6"/>'
     + '<circle class="dot fade" cx="' + lx + '" cy="' + ly + '" r="7"/>'
-    + '<text class="label" x="' + (fx + 12) + '" y="' + (fy - 12) + '">1,622</text>'
-    + '<text class="label fade" x="' + (lx + 12) + '" y="' + (ly + 2) + '">12,765</text>'
-    + '<text class="label--sub fade" x="' + (lx + 12) + '" y="' + (ly + 18) + '">Nov 2026</text>'
-    + '<text class="axis" x="' + L + '" y="' + (H - 8) + '">Oct 2025</text>'
-    + '<text class="axis" x="' + (W - R) + '" y="' + (H - 8) + '" text-anchor="end">Nov 2026</text>'
+    + '<text class="label" x="' + (fx + 12) + '" y="' + (fy - 12) + '">' + nf(GROWTH[0]) + '</text>'
+    + '<text class="label fade" x="' + (lx + 12) + '" y="' + (ly + 2) + '">' + nf(GROWTH[GROWTH.length - 1]) + '</text>'
+    + '<text class="label--sub fade" x="' + (lx + 12) + '" y="' + (ly + 18) + '">' + monthNov + '</text>'
+    + '<text class="axis" x="' + L + '" y="' + (H - 8) + '">' + monthOct + '</text>'
+    + '<text class="axis" x="' + (W - R) + '" y="' + (H - 8) + '" text-anchor="end">' + monthNov + '</text>'
     + '</svg>';
   const line = host.querySelector('.line');
   line.style.setProperty('--len', Math.ceil(line.getTotalLength()));
-})();
+}
+drawGrowth();
 
 document.querySelectorAll('.spark').forEach((el) => {
   const data = SERIES[el.dataset.series];
@@ -142,3 +149,35 @@ document.querySelectorAll('.story__head').forEach((head) => head.addEventListene
   document.querySelectorAll('.story').forEach((s) => { s.classList.remove('is-open'); s.querySelector('.story__head').setAttribute('aria-expanded', 'false'); });
   story.classList.add('is-open'); head.setAttribute('aria-expanded', 'true');
 }));
+
+// ---- English / French ----
+const META = {
+  en: { title: document.title, desc: document.querySelector('meta[name="description"]').content },
+  fr: { title: 'Wahiba Rechid | Responsable Go-to-Market et Marketing', desc: 'Portfolio de Wahiba Rechid, responsable go-to-market et marketing. Stratégie de marque, lancements produit et croissance inbound pour des entreprises de la tech, de l\u2019éducation et des télécoms.' }
+};
+const i18nEls = [...document.querySelectorAll('[data-fr]')];
+i18nEls.forEach((el) => { el.dataset.en = el.innerHTML; });
+const ariaEls = [...document.querySelectorAll('[data-fr-aria]')];
+ariaEls.forEach((el) => { el.dataset.enAria = el.getAttribute('aria-label'); });
+const altEls = [...document.querySelectorAll('[data-fr-alt]')];
+altEls.forEach((el) => { el.dataset.enAlt = el.getAttribute('alt'); });
+
+function setLang(l, remember) {
+  LANG = l === 'fr' ? 'fr' : 'en';
+  document.documentElement.lang = LANG;
+  i18nEls.forEach((el) => { el.innerHTML = LANG === 'fr' ? el.dataset.fr : el.dataset.en; });
+  ariaEls.forEach((el) => el.setAttribute('aria-label', LANG === 'fr' ? el.dataset.frAria : el.dataset.enAria));
+  altEls.forEach((el) => el.setAttribute('alt', LANG === 'fr' ? el.dataset.frAlt : el.dataset.enAlt));
+  document.title = META[LANG].title;
+  document.querySelector('meta[name="description"]').content = META[LANG].desc;
+  document.querySelectorAll('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === LANG)));
+  document.querySelectorAll('[data-count]').forEach((el) => { if (el.closest('.is-in')) el.textContent = format(el, Number(el.dataset.count)); });
+  drawGrowth();
+  if (remember) { try { localStorage.setItem('lang', LANG); } catch (e) {} }
+}
+document.querySelectorAll('.lang button').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.lang, true)));
+(function initLang() {
+  let l = 'en';
+  try { l = new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || 'en'; } catch (e) {}
+  if (l === 'fr') setLang('fr', false);
+})();
